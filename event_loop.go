@@ -8,18 +8,33 @@ func main() {
 
 func EventLoop[T interface{}](inputFunctions []func() T) []T {
 	var toReturn []T
-	var wrap = func(mainChannel chan T, executor func() T, index int) {
-		mainChannel <- executor()
-		if index == cap(mainChannel) {
-			close(mainChannel)
-		}
-	}
+
 	mainChannel := make(chan T, 1)
-	for idx, inputFunction := range inputFunctions {
-		go wrap(mainChannel, inputFunction, idx)
+	done := make(chan bool)
+
+	go func() {
+		for {
+			value, isMore := <-mainChannel
+			if isMore {
+				toReturn = append(toReturn, value)
+				if len(toReturn) == cap(inputFunctions) {
+					close(mainChannel)
+				}
+			} else {
+				// mainChannel closed, trigger done channel
+				done <- true
+				return
+			}
+		}
+	}()
+
+	for _, inputFunction := range inputFunctions {
+		executor := inputFunction
+		go func() {
+			mainChannel <- executor()
+		}()
 	}
-	for val := range mainChannel {
-		toReturn = append(toReturn, val)
-	}
+	// wait for done channel to receive signal
+	<-done
 	return toReturn
 }
