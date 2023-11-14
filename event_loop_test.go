@@ -1,12 +1,27 @@
 package main
 
 import (
-	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestLoopOrder(t *testing.T) {
+func TestLoop(t *testing.T) {
+	var input = []func() string{
+		func() string { return "a" },
+		func() string { return "b" },
+		func() string { return "c" },
+		func() string { return "d" },
+		func() string { return "e" },
+	}
+
+	got := EventLoop[string](input)
+	var expected = []string{"a", "b", "c", "d", "e"}
+	assert.ElementsMatch(t, got, expected)
+}
+
+func TestLoopOutOfOrder(t *testing.T) {
 	var input = []func() string{
 		func() string { time.Sleep(3 * time.Second); return "a" },
 		func() string { time.Sleep(2 * time.Second); return "b" },
@@ -17,9 +32,7 @@ func TestLoopOrder(t *testing.T) {
 
 	got := EventLoop[string](input)
 	var expected = []string{"d", "b", "a", "e", "c"}
-	if !reflect.DeepEqual(expected, got) {
-		t.Errorf("EventLoop(); no good, got %s", got)
-	}
+	assert.EqualValues(t, got, expected)
 }
 
 func TestLoopParallel(t *testing.T) {
@@ -33,13 +46,9 @@ func TestLoopParallel(t *testing.T) {
 	got := EventLoop[string](input)
 	elapsed := time.Since((timeStart))
 	var expected = []string{"b", "a", "c"}
-	if !reflect.DeepEqual(expected, got) {
-		t.Errorf("EventLoop(); no good, got %s", got)
-	}
+	assert.EqualValues(t, got, expected)
 	// verify that we're running in parallel
-	if elapsed.Seconds() > 7 {
-		t.Errorf("EventLoop(); should have been run in parallel. Expected: between 5 and 6s; Actual: %d", elapsed)
-	}
+	assert.LessOrEqual(t, elapsed.Seconds(), 7.0)
 }
 
 func TestLoopErrorHandling(t *testing.T) {
@@ -51,7 +60,6 @@ func TestLoopErrorHandling(t *testing.T) {
 
 	got := EventLoop[string](input)
 	var expected = []string{"b", "a"}
-	if !reflect.DeepEqual(expected, got) {
-		t.Errorf("EventLoop(); no good, got %s", got)
-	}
+	assert.EqualValues(t, got, expected)
+
 }
