@@ -1,4 +1,4 @@
-package main
+package event_loop
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLoop(t *testing.T) {
+func TestEventLoop(t *testing.T) {
 	var input = []func() string{
 		func() string { return "a" },
 		func() string { return "b" },
@@ -21,7 +21,7 @@ func TestLoop(t *testing.T) {
 	assert.ElementsMatch(t, expected, got)
 }
 
-func TestLoopOutOfOrder(t *testing.T) {
+func TestEventLoopOutOfOrder(t *testing.T) {
 	var input = []func() string{
 		func() string { time.Sleep(3 * time.Second); return "a" },
 		func() string { time.Sleep(2 * time.Second); return "b" },
@@ -35,7 +35,7 @@ func TestLoopOutOfOrder(t *testing.T) {
 	assert.EqualValues(t, expected, got)
 }
 
-func TestLoopParallel(t *testing.T) {
+func TestEventLoopParallel(t *testing.T) {
 	timeStart := time.Now()
 	var input = []func() string{
 		func() string { time.Sleep(4 * time.Second); return "a" },
@@ -51,7 +51,7 @@ func TestLoopParallel(t *testing.T) {
 	assert.LessOrEqual(t, elapsed.Seconds(), 7.0)
 }
 
-func TestLoopErrorHandling(t *testing.T) {
+func TestEventLoopErrorHandling(t *testing.T) {
 	var input = []func() string{
 		func() string { time.Sleep(3 * time.Second); return "a" },
 		func() string { time.Sleep(1 * time.Second); return "b" },
@@ -62,18 +62,4 @@ func TestLoopErrorHandling(t *testing.T) {
 	var expected = []string{"b", "a"}
 	assert.EqualValues(t, expected, got)
 
-}
-
-func TestPromiseAll(t *testing.T) {
-	var input = []func() string{
-		func() string { time.Sleep(3 * time.Second); return "a" },
-		func() string { time.Sleep(2 * time.Second); return "b" },
-		func() string { time.Sleep(5 * time.Second); return "c" },
-		func() string { time.Sleep(1 * time.Second); return "d" },
-		func() string { time.Sleep(4 * time.Second); return "e" },
-	}
-
-	got := PromiseAll[string](input)
-	var expected = []string{"a", "b", "c", "d", "e"}
-	assert.EqualValues(t, expected, got)
 }
