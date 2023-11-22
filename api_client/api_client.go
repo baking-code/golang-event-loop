@@ -1,6 +1,7 @@
 package apiclient
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -41,4 +42,13 @@ func handleResponse(resp *http.Response, err error) (interface{}, error) {
 func Get(url string) (interface{}, error) {
 	client := getClient()
 	return handleResponse(client.Get(url))
+}
+
+func Post(url string, body interface{}) (interface{}, error) {
+	client := getClient()
+	b, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	return handleResponse(client.Post(url, "application/json", bytes.NewReader(b)))
 }
